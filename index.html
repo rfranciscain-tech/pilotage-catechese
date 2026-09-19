@@ -6,90 +6,246 @@
   <title>Pilotage Catéchèse — Sainte-Geneviève de Pahou</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #f8fafc; color: #1e293b; }
-    header { text-align: center; margin-bottom: 24px; }
-    h1 { font-size: 1.25rem; color: #0f172a; margin: 0; }
-    p.sub { font-size: 0.875rem; color: #64748b; margin-top: 4px; }
-    .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .btn { display: inline-block; background: #16a34a; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 500; cursor: pointer; text-decoration: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.875rem; }
-    .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f8fafc; color: #1e293b; }
+    header { background: #1e3a8a; color: white; padding: 16px; text-align: center; }
+    h1 { font-size: 1.15rem; margin: 0; }
+    p.sub { font-size: 0.8rem; margin: 4px 0 0 0; opacity: 0.85; }
+
+    /* Barre de bascule des rôles pour la présentation */
+    .role-bar { background: #0f172a; padding: 10px 16px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .role-btn { border: 1px solid #475569; background: #1e293b; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+    .role-btn.active { background: #2563eb; border-color: #60a5fa; font-weight: bold; }
+
+    .container { max-width: 950px; margin: 20px auto; padding: 0 16px; }
+    .card { background: white; border-radius: 8px; padding: 18px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: white; border: 1px solid #e2e8f0; padding: 14px; border-radius: 8px; text-align: center; }
+    .stat-val { font-size: 1.6rem; font-weight: bold; color: #1e3a8a; }
+    .stat-label { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
+    th { background: #f1f5f9; color: #475569; }
+
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
     .badge-vert { background: #dcfce7; color: #15803d; }
     .badge-jaune { background: #fef9c3; color: #a16207; }
     .badge-rouge { background: #fee2e2; color: #b91c1c; }
+
+    .btn-wa { display: inline-flex; align-items: center; background: #22c55e; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; text-decoration: none; font-weight: 500; }
+    .btn-action { background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+    .vue-panel { display: none; }
+    .vue-panel.active { display: block; }
   </style>
 </head>
 <body>
 
   <header>
     <h1>Paroisse Sainte-Geneviève de Pahou</h1>
-    <p class="sub">Système de pilotage de la catéchèse — Rentrée 2026</p>
+    <p class="sub">Plateforme Pastorale de Suivi & Carte de Messe</p>
   </header>
 
-  <div class="card">
-    <h3>Pointage du Maître</h3>
-    <p>Sélectionnez une séance pour enregistrer la présence d'après la carte de messe.</p>
-    <div id="statut">Connexion à la base de données...</div>
+  <!-- Sélecteur de rôle en démonstration -->
+  <div class="role-bar">
+    <span style="color:#94a3b8; font-size:0.8rem; align-self:center;">Vue active :</span>
+    <button class="role-btn active" onclick="basculerVue(event, 'maitre')">📱 1. Vue Maître (Classe)</button>
+    <button class="role-btn" onclick="basculerVue(event, 'coordination')">📊 2. Coordination / Secrétariat</button>
+    <button class="role-btn" onclick="basculerVue(event, 'cure')">⚖️ 3. Curé & Conseil Pastoral</button>
   </div>
 
-  <div class="card">
-    <h3>Liste des Catéchumènes (Aperçu)</h3>
-    <table id="table-liste">
-      <thead>
-        <tr>
-          <th>Matricule</th>
-          <th>Nom & Prénoms</th>
-          <th>Signal</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="corps-table">
-        <tr><td colspan="4">Chargement...</td></tr>
-      </tbody>
-    </table>
+  <div class="container">
+    <div id="status-cnx" style="font-size:0.8rem; margin-bottom:12px; color:#64748b;">Connexion à Supabase...</div>
+
+    <!-- 1. VUE MAÎTRE DE CLASSE -->
+    <div id="vue-maitre" class="vue-panel active">
+      <!-- Formulaire d'enregistrement délégué au maître -->
+      <div class="card" style="border-left: 4px solid #2563eb;">
+        <h3 style="margin-top:0;">+ Enregistrement Rapide d'un Catéchumène</h3>
+        <p style="font-size:0.8rem; color:#64748b;">Le maître de classe enregistre directement l'enfant dès réception de sa carte et de la fiche de renseignement.</p>
+        <form id="form-inscription" onsubmit="enregistrerCatechumene(event)">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
+            <input type="text" id="ins-matricule" placeholder="N° Carte (ex: CAT-2026-005)" required style="padding:7px; border:1px solid #cbd5e1; border-radius:4px;">
+            <input type="text" id="ins-nom" placeholder="Nom" required style="padding:7px; border:1px solid #cbd5e1; border-radius:4px;">
+            <input type="text" id="ins-prenoms" placeholder="Prénoms" required style="padding:7px; border:1px solid #cbd5e1; border-radius:4px;">
+            <input type="text" id="ins-tuteur" placeholder="Nom du Tuteur" required style="padding:7px; border:1px solid #cbd5e1; border-radius:4px;">
+            <input type="tel" id="ins-tel" placeholder="WhatsApp (+229 01...)" required style="padding:7px; border:1px solid #cbd5e1; border-radius:4px;">
+          </div>
+          <button type="submit" class="btn-action" style="margin-top:10px; background:#16a34a; padding:7px 14px; font-weight:bold;">Enregistrer sur la classe</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Pointage de Présence — Groupe Année 1</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>N° Carte</th>
+              <th>Catéchumène</th>
+              <th>Statut</th>
+              <th>Pointage Séance</th>
+              <th>Relance Tuteur</th>
+            </tr>
+          </thead>
+          <tbody id="corps-maitre">
+            <tr><td colspan="5">Chargement...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. VUE COORDINATION -->
+    <div id="vue-coordination" class="vue-panel">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val" id="nb-total">-</div><div class="stat-label">Inscrits Global</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:#15803d;" id="nb-verts">-</div><div class="stat-label">Assidus (>80%)</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:#b91c1c;" id="nb-rouges">-</div><div class="stat-label">Alertes Décrochage</div></div>
+      </div>
+      <div class="card">
+        <h3>Registre Central de Suivi Pastoral</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Matricule</th>
+              <th>Nom & Prénoms</th>
+              <th>Station / Entité</th>
+              <th>Taux Présence</th>
+              <th>Alerte</th>
+            </tr>
+          </thead>
+          <tbody id="corps-coordination"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. VUE CURÉ / DÉLIBÉRATION -->
+    <div id="vue-cure" class="vue-panel">
+      <div class="card">
+        <h3>Conseil Pastoral : Décisions pour Sacrements</h3>
+        <p style="font-size:0.85rem; color:#64748b;">Tableau de délibération annuel pour valider l'accès aux sacrements (Baptême, Communion, Confirmation).</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Matricule</th>
+              <th>Nom & Prénoms</th>
+              <th>Assiduité Annuelle</th>
+              <th>Avis Système</th>
+              <th>Décision Curé</th>
+            </tr>
+          </thead>
+          <tbody id="corps-cure"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script>
     const SUPABASE_URL = 'https://utrgqyylfualssfoeiqf.supabase.co';
-    const SUPABASE_ANON_KEY ='sb_publishable_SqwcUKo17ikShaBZelkjAA_tvY7f4lz'; // Remplacer par votre clé anon
+    const SUPABASE_ANON_KEY = 'sb_publishable_SqwcUKo17ikShaBZelkjAA_tvY7f4lz';
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let listeCatechumenes = [];
 
-    async function chargerDonnees() {
-      const statutDiv = document.getElementById('statut');
-      const tableBody = document.getElementById('corps-table');
+    function basculerVue(e, vue) {
+      document.querySelectorAll('.vue-panel').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.role-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('vue-' + vue).classList.add('active');
+      e.target.classList.add('active');
+    }
 
+    async function initialiserDonnees() {
+      const statusDiv = document.getElementById('status-cnx');
       try {
-        const { data, error } = await supabaseClient.from('v_profil_parcours').select('*').limit(10);
+        const { data, error } = await supabaseClient.from('t_catechumenes').select('*').order('matricule', { ascending: true });
         if (error) throw error;
-
-        statutDiv.innerHTML = '<span style="color: green;">✓ Connecté à la base Supabase</span>';
-        tableBody.innerHTML = '';
-
-        if (!data || data.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="4">Aucun catéchumène inscrit pour le moment.</td></tr>';
-          return;
-        }
-
-        data.forEach(item => {
-          let badgeClass = item.signal === 'vert' ? 'badge-vert' : item.signal === 'rouge' ? 'badge-rouge' : 'badge-jaune';
-          tableBody.innerHTML += `
-            <tr>
-              <td><strong>${item.matricule}</strong></td>
-              <td>${item.nom} ${item.prenoms}</td>
-              <td><span class="badge ${badgeClass}">${item.signal || 'non pointé'}</span></td>
-              <td><button class="btn" style="padding: 4px 8px; font-size: 0.75rem;">Pointer</button></td>
-            </tr>
-          `;
-        });
+        listeCatechumenes = data || [];
+        statusDiv.innerHTML = '<span style="color:#16a34a; font-weight:500;">✓ Connecté à la base Supabase — Synchronisation active</span>';
+        rendreVues();
       } catch (err) {
-        statutDiv.innerHTML = '<span style="color: red;">Erreur de connexion : ' + err.message + '</span>';
-        tableBody.innerHTML = '<tr><td colspan="4">Données indisponibles.</td></tr>';
+        statusDiv.innerHTML = '<span style="color:#dc2626;">Erreur de connexion : ' + err.message + '</span>';
       }
     }
 
-    chargerDonnees();
+    function rendreVues() {
+      // 1. Vue Maître
+      const corpsMaitre = document.getElementById('corps-maitre');
+      corpsMaitre.innerHTML = '';
+      listeCatechumenes.forEach(c => {
+        let cleanTel = c.telephone_tuteur ? c.telephone_tuteur.replace(/[^0-9]/g, '') : '';
+        let message = encodeURIComponent(`Bonjour ${c.nom_tuteur || 'Parent'}, nous constatons l'absence répétée de ${c.prenoms} à la catéchèse à Sainte-Geneviève de Pahou. Merci de contacter le catéchiste.`);
+        let waLink = `https://wa.me/${cleanTel}?text=${message}`;
+
+        corpsMaitre.innerHTML += `
+          <tr>
+            <td><strong>${c.matricule}</strong></td>
+            <td>${c.nom} ${c.prenoms}</td>
+            <td><span class="badge badge-${c.signal_alerte || 'jaune'}">${c.signal_alerte || 'inconnu'}</span></td>
+            <td><button class="btn-action" onclick="alert('Présence validée pour ${c.prenoms}')">Pointer Présent</button></td>
+            <td>${c.signal_alerte === 'rouge' ? `<a href="${waLink}" target="_blank" class="btn-wa">📱 Relance WA</a>` : '-'}</td>
+          </tr>
+        `;
+      });
+
+      // 2. Vue Coordination
+      document.getElementById('nb-total').innerText = listeCatechumenes.length;
+      document.getElementById('nb-verts').innerText = listeCatechumenes.filter(c => c.signal_alerte === 'vert').length;
+      document.getElementById('nb-rouges').innerText = listeCatechumenes.filter(c => c.signal_alerte === 'rouge').length;
+
+      const corpsCoord = document.getElementById('corps-coordination');
+      corpsCoord.innerHTML = '';
+      listeCatechumenes.forEach(c => {
+        corpsCoord.innerHTML += `
+          <tr>
+            <td>${c.matricule}</td>
+            <td>${c.nom} ${c.prenoms}</td>
+            <td>${c.code_entite}</td>
+            <td><strong>${c.assiduite_pct || 0}%</strong></td>
+            <td><span class="badge badge-${c.signal_alerte || 'jaune'}">${c.signal_alerte || '-'}</span></td>
+          </tr>
+        `;
+      });
+
+      // 3. Vue Curé
+      const corpsCure = document.getElementById('corps-cure');
+      corpsCure.innerHTML = '';
+      listeCatechumenes.forEach(c => {
+        let avis = (c.assiduite_pct >= 80) ? '<span style="color:#15803d; font-weight:bold;">Admissible</span>' : '<span style="color:#b91c1c; font-weight:bold;">À ajourner / Entretien</span>';
+        corpsCure.innerHTML += `
+          <tr>
+            <td>${c.matricule}</td>
+            <td>${c.nom} ${c.prenoms}</td>
+            <td>${c.assiduite_pct || 0}%</td>
+            <td>${avis}</td>
+            <td><button class="btn-action" style="background:#0f172a;" onclick="alert('Sacrement validé pour ${c.prenoms}')">Approuver</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    async function enregistrerCatechumene(e) {
+      e.preventDefault();
+      const nouveau = {
+        matricule: document.getElementById('ins-matricule').value,
+        nom: document.getElementById('ins-nom').value.toUpperCase(),
+        prenoms: document.getElementById('ins-prenoms').value,
+        nom_tuteur: document.getElementById('ins-tuteur').value,
+        telephone_tuteur: document.getElementById('ins-tel').value,
+        code_entite: 'PAHOU_CENTRE',
+        code_niveau: 'NIV1_EVEIL',
+        assiduite_pct: 100,
+        signal_alerte: 'vert'
+      };
+
+      const { error } = await supabaseClient.from('t_catechumenes').insert([nouveau]);
+      if (error) {
+        alert("Erreur lors de l'enregistrement : " + error.message);
+      } else {
+        alert("Catéchumène enregistré avec succès !");
+        document.getElementById('form-inscription').reset();
+        initialiserDonnees();
+      }
+    }
+
+    initialiserDonnees();
   </script>
 </body>
 </html>
