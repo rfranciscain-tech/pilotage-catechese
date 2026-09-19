@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilotage Catéchèse — Sainte-Geneviève de Pahou</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #f8fafc; color: #1e293b; }
+    header { text-align: center; margin-bottom: 24px; }
+    h1 { font-size: 1.25rem; color: #0f172a; margin: 0; }
+    p.sub { font-size: 0.875rem; color: #64748b; margin-top: 4px; }
+    .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .btn { display: inline-block; background: #16a34a; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 500; cursor: pointer; text-decoration: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.875rem; }
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+    .badge-vert { background: #dcfce7; color: #15803d; }
+    .badge-jaune { background: #fef9c3; color: #a16207; }
+    .badge-rouge { background: #fee2e2; color: #b91c1c; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Paroisse Sainte-Geneviève de Pahou</h1>
+    <p class="sub">Système de pilotage de la catéchèse — Rentrée 2026</p>
+  </header>
+
+  <div class="card">
+    <h3>Pointage du Maître</h3>
+    <p>Sélectionnez une séance pour enregistrer la présence d'après la carte de messe.</p>
+    <div id="statut">Connexion à la base de données...</div>
+  </div>
+
+  <div class="card">
+    <h3>Liste des Catéchumènes (Aperçu)</h3>
+    <table id="table-liste">
+      <thead>
+        <tr>
+          <th>Matricule</th>
+          <th>Nom & Prénoms</th>
+          <th>Signal</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="corps-table">
+        <tr><td colspan="4">Chargement...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://utrgqyylfualssfoeiqf.supabase.co';
+    const SUPABASE_ANON_KEY =sb_publishable_SqwcUKo17ikShaBZelkjAA_tvY7f4lz; // Remplacer par votre clé anon
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function chargerDonnees() {
+      const statutDiv = document.getElementById('statut');
+      const tableBody = document.getElementById('corps-table');
+
+      try {
+        const { data, error } = await supabaseClient.from('v_profil_parcours').select('*').limit(10);
+        if (error) throw error;
+
+        statutDiv.innerHTML = '<span style="color: green;">✓ Connecté à la base Supabase</span>';
+        tableBody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="4">Aucun catéchumène inscrit pour le moment.</td></tr>';
+          return;
+        }
+
+        data.forEach(item => {
+          let badgeClass = item.signal === 'vert' ? 'badge-vert' : item.signal === 'rouge' ? 'badge-rouge' : 'badge-jaune';
+          tableBody.innerHTML += `
+            <tr>
+              <td><strong>${item.matricule}</strong></td>
+              <td>${item.nom} ${item.prenoms}</td>
+              <td><span class="badge ${badgeClass}">${item.signal || 'non pointé'}</span></td>
+              <td><button class="btn" style="padding: 4px 8px; font-size: 0.75rem;">Pointer</button></td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        statutDiv.innerHTML = '<span style="color: red;">Erreur de connexion : ' + err.message + '</span>';
+        tableBody.innerHTML = '<tr><td colspan="4">Données indisponibles.</td></tr>';
+      }
+    }
+
+    chargerDonnees();
+  </script>
+</body>
+</html>
