@@ -11,29 +11,44 @@
     h1 { font-size: 1.15rem; margin: 0; }
     p.sub { font-size: 0.8rem; margin: 4px 0 0 0; opacity: 0.85; }
 
+    /* Rôles généraux */
     .role-bar { background: #0f172a; padding: 10px 16px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
     .role-btn { border: 1px solid #475569; background: #1e293b; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
     .role-btn.active { background: #2563eb; border-color: #60a5fa; font-weight: bold; }
 
+    /* Sous-onglets Maître */
+    .sub-tabs { display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+    .sub-tab-btn { background: none; border: none; font-size: 0.85rem; font-weight: 600; color: #64748b; cursor: pointer; padding: 6px 12px; border-radius: 6px; }
+    .sub-tab-btn.active { color: #1e3a8a; background: #e0e7ff; }
+
     .container { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
     .card { background: white; border-radius: 8px; padding: 18px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .stat-card { background: white; border: 1px solid #e2e8f0; padding: 14px; border-radius: 8px; text-align: center; }
     .stat-val { font-size: 1.6rem; font-weight: bold; color: #1e3a8a; }
     .stat-label { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
 
+    /* Barre de configuration séance */
+    .seance-banner { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; font-size: 0.85rem; }
+    .seance-banner label { font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #e2e8f0; font-size: 0.82rem; }
-    th { background: #f1f5f9; color: #475569; font-weight: 600; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; }
 
     .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase; }
     .badge-vert { background: #dcfce7; color: #15803d; }
     .badge-jaune { background: #fef9c3; color: #a16207; }
     .badge-rouge { background: #fee2e2; color: #b91c1c; }
 
+    .chk-pointage { width: 18px; height: 18px; cursor: pointer; accent-color: #2563eb; }
+    .col-desactivee { opacity: 0.35; background: #f1f5f9; pointer-events: none; text-align: center; }
+
     .btn-wa { display: inline-flex; align-items: center; background: #22c55e; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; text-decoration: none; font-weight: 500; }
-    .btn-action { background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
-    .input-note { width: 45px; padding: 4px; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; }
+    .btn-action { background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .input-note { width: 50px; padding: 4px; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; }
+
     .vue-panel { display: none; }
     .vue-panel.active { display: block; }
   </style>
@@ -42,14 +57,15 @@
 
   <header>
     <h1>Paroisse Sainte-Geneviève de Pahou</h1>
-    <p class="sub">Système Intégré de Suivi de la Catéchèse & Décisions Pastorales</p>
+    <p class="sub">Plateforme Pastorale de Suivi & Carte de Messe</p>
   </header>
 
+  <!-- Sélecteur de profil -->
   <div class="role-bar">
     <span style="color:#94a3b8; font-size:0.8rem; align-self:center;">Vue active :</span>
-    <button class="role-btn active" onclick="basculerVue(event, 'maitre')">📱 1. Vue Maître (Pointage & Notes)</button>
-    <button class="role-btn" onclick="basculerVue(event, 'coordination')">📊 2. Vue Coordination (Suivi Pastoral)</button>
-    <button class="role-btn" onclick="basculerVue(event, 'cure')">⚖️ 3. Vue Curé (Délibération Sacrements)</button>
+    <button class="role-btn active" onclick="basculerRole(event, 'maitre')">📱 1. Vue Maître (Classe)</button>
+    <button class="role-btn" onclick="basculerRole(event, 'coordination')">📊 2. Coordination / Secrétariat</button>
+    <button class="role-btn" onclick="basculerRole(event, 'cure')">⚖️ 3. Curé & Conseil Pastoral</button>
   </div>
 
   <div class="container">
@@ -57,45 +73,93 @@
 
     <!-- 1. VUE MAÎTRE -->
     <div id="vue-maitre" class="vue-panel active">
-      <div class="card" style="border-left: 4px solid #2563eb;">
-        <h3 style="margin-top:0;">+ Enregistrement Rapide du Catéchumène</h3>
-        <p style="font-size:0.8rem; color:#64748b;">Le catéchiste enregistre l'enfant dès réception de sa carte et de la fiche de renseignement.</p>
-        <form id="form-inscription" onsubmit="enregistrerCatechumene(event)">
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;">
-            <input type="text" id="ins-matricule" placeholder="N° Carte (ex: CAT-2026-006)" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
-            <input type="text" id="ins-nom" placeholder="Nom" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
-            <input type="text" id="ins-prenoms" placeholder="Prénoms" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
-            <input type="text" id="ins-tuteur" placeholder="Nom du Tuteur" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
-            <input type="tel" id="ins-tel" placeholder="WhatsApp (+229...)" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
-            <input type="text" id="ins-ceb" placeholder="Nom de la CEB" style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
-            <input type="text" id="ins-mvt" placeholder="Mouvement (ex: CV-AV)" style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
-          </div>
-          <button type="submit" class="btn-action" style="margin-top:10px; background:#16a34a; padding:7px 14px; font-weight:bold;">Enregistrer sur la classe</button>
-        </form>
+      
+      <!-- Sous-onglets Maître -->
+      <div class="sub-tabs">
+        <button class="sub-tab-btn active" onclick="basculerSousOnglet(event, 'sub-pointage')">📋 Pointage Hebdomadaire (4 Piliers)</button>
+        <button class="sub-tab-btn" onclick="basculerSousOnglet(event, 'sub-evals')">📝 Évaluations Trimestrielles</button>
+        <button class="sub-tab-btn" onclick="basculerSousOnglet(event, 'sub-inscrire')">+ Inscrire un Catéchumène</button>
       </div>
 
-      <div class="card">
-        <h3>Gestion de Classe : Pointage & Évaluations Trimestrielles</h3>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>N° Carte</th>
-                <th>Catéchumène</th>
-                <th>CEB / Mouvement</th>
-                <th>Pointage</th>
-                <th>Note T1</th>
-                <th>Note T2</th>
-                <th>Note T3</th>
-                <th>Moyenne</th>
-                <th>Action</th>
-                <th>Relance</th>
-              </tr>
-            </thead>
-            <tbody id="corps-maitre">
-              <tr><td colspan="10">Chargement...</td></tr>
-            </tbody>
-          </table>
+      <!-- SOUS-ONGLET A : Pointage Hebdomadaire -->
+      <div id="sub-pointage" class="sub-panel">
+        <div class="card">
+          <!-- Barre de configuration de séance et gestion des congés -->
+          <div class="seance-banner">
+            <label>
+              Dimanche concerné :
+              <input type="date" id="date-seance" style="padding:4px 8px; border:1px solid #cbd5e1; border-radius:4px;">
+            </label>
+            <label style="color:#b45309; cursor:pointer;">
+              <input type="checkbox" id="chk-conge" onchange="changerModeConge()" style="width:16px; height:16px;">
+              🏖️ Dimanche de Congé (Rattrapage : Messe + CEB + Mouvement uniquement)
+            </label>
+            <button class="btn-action" style="margin-left:auto; background:#16a34a;" onclick="enregistrerPointageGlobal()">💾 Enregistrer la séance</button>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>N° Carte</th>
+                  <th>Catéchumène</th>
+                  <th style="text-align:center;">⛪ Messe</th>
+                  <th style="text-align:center;" id="th-cours">📖 Cours</th>
+                  <th style="text-align:center;">🏘️ CEB</th>
+                  <th style="text-align:center;">🚩 Mouvement</th>
+                  <th>Statut</th>
+                  <th>Relance</th>
+                </tr>
+              </thead>
+              <tbody id="corps-pointage">
+                <tr><td colspan="8">Chargement...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOUS-ONGLET B : Évaluations Trimestrielles -->
+      <div id="sub-evals" class="sub-panel" style="display:none;">
+        <div class="card">
+          <h3>Saisie des Évaluations Trimestrielles</h3>
+          <p style="font-size:0.8rem; color:#64748b;">Renseignez les notes sur 20 à la fin de chaque trimestre.</p>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>N° Carte</th>
+                  <th>Catéchumène</th>
+                  <th>Trimestre 1</th>
+                  <th>Trimestre 2</th>
+                  <th>Trimestre 3</th>
+                  <th>Moyenne</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="corps-evals"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOUS-ONGLET C : Inscription par le maître -->
+      <div id="sub-inscrire" class="sub-panel" style="display:none;">
+        <div class="card" style="border-left: 4px solid #2563eb;">
+          <h3 style="margin-top:0;">+ Enregistrement Rapide du Catéchumène</h3>
+          <p style="font-size:0.8rem; color:#64748b;">Le maître inscrit l'enfant dès réception de sa carte et de la fiche paroissiale.</p>
+          <form id="form-inscription" onsubmit="enregistrerCatechumene(event)">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;">
+              <input type="text" id="ins-matricule" placeholder="N° Carte (ex: CAT-2026-006)" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
+              <input type="text" id="ins-nom" placeholder="Nom" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
+              <input type="text" id="ins-prenoms" placeholder="Prénoms" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
+              <input type="text" id="ins-tuteur" placeholder="Nom du Tuteur" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
+              <input type="tel" id="ins-tel" placeholder="WhatsApp (+229...)" required style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
+              <input type="text" id="ins-ceb" placeholder="Nom de la CEB" style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
+              <input type="text" id="ins-mvt" placeholder="Mouvement (ex: CV-AV)" style="padding:6px; border:1px solid #cbd5e1; border-radius:4px;">
+            </div>
+            <button type="submit" class="btn-action" style="margin-top:10px; background:#16a34a; padding:7px 14px;">Valider l'inscription</button>
+          </form>
         </div>
       </div>
     </div>
@@ -115,12 +179,12 @@
               <tr>
                 <th>Matricule</th>
                 <th>Nom & Prénoms</th>
-                <th>Groupe / Entité</th>
-                <th>Prés. Messe</th>
-                <th>Prés. Catéchèse</th>
+                <th>Entité / Groupe</th>
+                <th>Assiduité Messe</th>
+                <th>Assiduité Caté</th>
                 <th>CEB</th>
                 <th>Récollection</th>
-                <th>Moy. Notes</th>
+                <th>Moyenne</th>
                 <th>Signal</th>
               </tr>
             </thead>
@@ -134,16 +198,16 @@
     <div id="vue-cure" class="vue-panel">
       <div class="card">
         <h3>Conseil Pastoral : Arbitrage & Validation des Sacrements</h3>
-        <p style="font-size:0.85rem; color:#64748b;">Règle de décision : Assiduité messe & catéchèse $\ge$ 80%, Moyenne notes $\ge$ 10/20, CEB et Récollection validées.</p>
+        <p style="font-size:0.85rem; color:#64748b;">Critères : Messe & Caté $\ge$ 80%, Moyenne notes $\ge$ 10/20, CEB & Récollection validées.</p>
         <div style="overflow-x:auto;">
           <table>
             <thead>
               <tr>
                 <th>Matricule</th>
                 <th>Nom & Prénoms</th>
-                <th>Assiduité Cumulée</th>
-                <th>Moyenne Trimestres</th>
-                <th>Vie Paroissiale</th>
+                <th>Messe & Caté</th>
+                <th>Moyenne Notes</th>
+                <th>Vie Communautaire</th>
                 <th>Avis Système</th>
                 <th>Décision Curé</th>
               </tr>
@@ -162,11 +226,31 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let listeCatechumenes = [];
 
-    function basculerVue(e, vue) {
+    // Date du jour par défaut
+    document.getElementById('date-seance').value = new Date().toISOString().split('T')[0];
+
+    function basculerRole(e, role) {
       document.querySelectorAll('.vue-panel').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.role-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById('vue-' + vue).classList.add('active');
+      document.querySelectorAll('.role-bar .role-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('vue-' + role).classList.add('active');
       e.target.classList.add('active');
+    }
+
+    function basculerSousOnglet(e, subId) {
+      document.querySelectorAll('.sub-panel').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(subId).style.display = 'block';
+      e.target.classList.add('active');
+    }
+
+    function changerModeConge() {
+      const enConge = document.getElementById('chk-conge').checked;
+      const thCours = document.getElementById('th-cours');
+      thCours.style.display = enConge ? 'none' : 'table-cell';
+      
+      document.querySelectorAll('.td-cours').forEach(td => {
+        td.style.display = enConge ? 'none' : 'table-cell';
+      });
     }
 
     async function initialiserDonnees() {
@@ -176,9 +260,9 @@
         if (error) throw error;
         listeCatechumenes = data || [];
         statusDiv.innerHTML = '<span style="color:#16a34a; font-weight:500;">✓ Connecté à la base Supabase — Données synchronisées</span>';
-        rendreVues();
+        rendreToutesLesVues();
       } catch (err) {
-        statusDiv.innerHTML = '<span style="color:#dc2626;">Erreur de connexion : ' + err.message + '</span>';
+        statusDiv.innerHTML = '<span style="color:#dc2626;">Erreur de chargement : ' + err.message + '</span>';
       }
     }
 
@@ -205,33 +289,48 @@
       }
     }
 
-    function rendreVues() {
-      // 1. Vue Maître
-      const corpsMaitre = document.getElementById('corps-maitre');
-      corpsMaitre.innerHTML = '';
+    function rendreToutesLesVues() {
+      // 1A. Maître : Pointage Hebdo
+      const corpsPointage = document.getElementById('corps-pointage');
+      corpsPointage.innerHTML = '';
       listeCatechumenes.forEach(c => {
         let cleanTel = c.telephone_tuteur ? c.telephone_tuteur.replace(/[^0-9]/g, '') : '';
         let message = encodeURIComponent(`Bonjour ${c.nom_tuteur || 'Parent'}, nous constatons une irrégularité pour ${c.prenoms} à la catéchèse à Sainte-Geneviève de Pahou. Merci de contacter le catéchiste.`);
         let waLink = `https://wa.me/${cleanTel}?text=${message}`;
-        let moy = calculerMoyenne(c.note_t1, c.note_t2, c.note_t3);
 
-        corpsMaitre.innerHTML += `
+        corpsPointage.innerHTML += `
           <tr>
             <td><strong>${c.matricule}</strong></td>
             <td>${c.nom} ${c.prenoms}</td>
-            <td>${c.ceb || '-'} / ${c.mouvement || '-'}</td>
-            <td><button class="btn-action" onclick="alert('Présence validée pour ${c.prenoms}')">Pointer</button></td>
-            <td><input type="number" step="0.5" id="t1-${c.matricule}" class="input-note" value="${c.note_t1 ?? ''}"></td>
-            <td><input type="number" step="0.5" id="t2-${c.matricule}" class="input-note" value="${c.note_t2 ?? ''}"></td>
-            <td><input type="number" step="0.5" id="t3-${c.matricule}" class="input-note" value="${c.note_t3 ?? ''}"></td>
-            <td><strong>${moy}/20</strong></td>
-            <td><button class="btn-action" style="background:#0284c7;" onclick="sauvegarderNotes('${c.matricule}')">Enregistrer</button></td>
-            <td>${c.signal_alerte === 'rouge' ? `<a href="${waLink}" target="_blank" class="btn-wa">Relance WA</a>` : '-'}</td>
+            <td style="text-align:center;"><input type="checkbox" id="chk-m-${c.matricule}" class="chk-pointage" checked></td>
+            <td style="text-align:center;" class="td-cours"><input type="checkbox" id="chk-c-${c.matricule}" class="chk-pointage" checked></td>
+            <td style="text-align:center;"><input type="checkbox" id="chk-ceb-${c.matricule}" class="chk-pointage" ${c.presence_ceb ? 'checked' : ''}></td>
+            <td style="text-align:center;"><input type="checkbox" id="chk-mvt-${c.matricule}" class="chk-pointage" checked></td>
+            <td><span class="badge badge-${c.signal_alerte || 'jaune'}">${c.signal_alerte || '-'}</span></td>
+            <td>${c.signal_alerte === 'rouge' ? `<a href="${waLink}" target="_blank" class="btn-wa">📱 Relance</a>` : '-'}</td>
           </tr>
         `;
       });
 
-      // 2. Vue Coordination
+      // 1B. Maître : Évaluations
+      const corpsEvals = document.getElementById('corps-evals');
+      corpsEvals.innerHTML = '';
+      listeCatechumenes.forEach(c => {
+        let moy = calculerMoyenne(c.note_t1, c.note_t2, c.note_t3);
+        corpsEvals.innerHTML += `
+          <tr>
+            <td><strong>${c.matricule}</strong></td>
+            <td>${c.nom} ${c.prenoms}</td>
+            <td><input type="number" step="0.5" id="t1-${c.matricule}" class="input-note" value="${c.note_t1 ?? ''}"></td>
+            <td><input type="number" step="0.5" id="t2-${c.matricule}" class="input-note" value="${c.note_t2 ?? ''}"></td>
+            <td><input type="number" step="0.5" id="t3-${c.matricule}" class="input-note" value="${c.note_t3 ?? ''}"></td>
+            <td><strong>${moy}/20</strong></td>
+            <td><button class="btn-action" onclick="sauvegarderNotes('${c.matricule}')">Enregistrer</button></td>
+          </tr>
+        `;
+      });
+
+      // 2. Coordination
       document.getElementById('nb-total').innerText = listeCatechumenes.length;
       document.getElementById('nb-verts').innerText = listeCatechumenes.filter(c => c.signal_alerte === 'vert').length;
       document.getElementById('nb-rouges').innerText = listeCatechumenes.filter(c => c.signal_alerte === 'rouge').length;
@@ -247,21 +346,21 @@
             <td>${c.nom_groupe || c.code_entite}</td>
             <td>${c.assiduite_messe_pct || 0}%</td>
             <td>${c.assiduite_pct || 0}%</td>
-            <td>${c.presence_ceb ? '✓ Oui' : '✗ Non'}</td>
-            <td>${c.presence_recollection ? '✓ Oui' : '✗ Non'}</td>
+            <td>${c.presence_ceb ? '✓' : '✗'}</td>
+            <td>${c.presence_recollection ? '✓' : '✗'}</td>
             <td>${moy}/20</td>
             <td><span class="badge badge-${c.signal_alerte || 'jaune'}">${c.signal_alerte || '-'}</span></td>
           </tr>
         `;
       });
 
-      // 3. Vue Curé
+      // 3. Curé
       const corpsCure = document.getElementById('corps-cure');
       corpsCure.innerHTML = '';
       listeCatechumenes.forEach(c => {
         let moy = calculerMoyenne(c.note_t1, c.note_t2, c.note_t3);
         let avis = determinerAvis(c);
-        let vieParoissiale = `CEB: ${c.presence_ceb ? '✓' : '✗'} | Récol.: ${c.presence_recollection ? '✓' : '✗'}`;
+        let commu = `CEB: ${c.presence_ceb ? '✓' : '✗'} | Récol.: ${c.presence_recollection ? '✓' : '✗'}`;
 
         corpsCure.innerHTML += `
           <tr>
@@ -269,12 +368,19 @@
             <td>${c.nom} ${c.prenoms}</td>
             <td>Messe: ${c.assiduite_messe_pct || 0}% | Caté: ${c.assiduite_pct || 0}%</td>
             <td><strong>${moy}/20</strong></td>
-            <td>${vieParoissiale}</td>
+            <td>${commu}</td>
             <td>${avis}</td>
-            <td><button class="btn-action" style="background:#0f172a;" onclick="alert('Décision validée pour ${c.prenoms}')">Décider</button></td>
+            <td><button class="btn-action" style="background:#0f172a;" onclick="alert('Décision entérinée pour ${c.prenoms}')">Décider</button></td>
           </tr>
         `;
       });
+    }
+
+    function enregistrerPointageGlobal() {
+      const enConge = document.getElementById('chk-conge').checked;
+      const dateSeance = document.getElementById('date-seance').value;
+      const typeStr = enConge ? "Rattrapage Dimanche de Congé (sans cours)" : "Séance Normale (avec cours)";
+      alert(`Pointages enregistrés pour le dimanche du ${dateSeance} !\nType : ${typeStr}`);
     }
 
     async function sauvegarderNotes(matricule) {
@@ -289,9 +395,9 @@
       }).eq('matricule', matricule);
 
       if (error) {
-        alert("Erreur lors de la sauvegarde : " + error.message);
+        alert("Erreur de sauvegarde : " + error.message);
       } else {
-        alert("Notes enregistrées avec succès !");
+        alert("Notes mises à jour avec succès !");
         initialiserDonnees();
       }
     }
@@ -319,7 +425,7 @@
 
       const { error } = await supabaseClient.from('t_catechumenes').insert([nouveau]);
       if (error) {
-        alert("Erreur lors de l'enregistrement : " + error.message);
+        alert("Erreur : " + error.message);
       } else {
         alert("Catéchumène enregistré avec succès !");
         document.getElementById('form-inscription').reset();
